@@ -10,6 +10,8 @@ from .views import (
     ShopUserListView
 )
 
+from rest_framework import permissions
+
 router = DefaultRouter()
 router.register(r'managers', ManagerViewSet, basename='manager')
 router.register(r'questions', ProductQuestionViewSet, basename='questions')

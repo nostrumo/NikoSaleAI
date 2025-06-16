@@ -47,9 +47,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'core',
 ]
-INSTALLED_APPS += ['rest_framework']
-INSTALLED_APPS += ['django_cryptography']
-INSTALLED_APPS += ['storages']
+INSTALLED_APPS += ['rest_framework',
+                   'django_cryptography',
+                   'storages',
+                   'drf_yasg',
+                   ]
 
 
 

@@ -1,10 +1,11 @@
 from django.db import IntegrityError
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-
+from drf_yasg import openapi
 from .permissions import IsOwnerOrManager, IsAuthenticatedOrAPISecret
 from .serializers import RegisterUserSerializer, MarketplaceTokenSerializer, ProductSerializer, \
     QuestionAnswerSerializer, ProductQuestionSerializer, ProductQuestionMessageSerializer, \
@@ -21,6 +22,11 @@ from .utils.utils import get_store_for_user
 
 
 class RegisterUserView(APIView):
+    @swagger_auto_schema(
+        operation_description="Регистрация владельца магазина",
+        request_body=RegisterUserSerializer,
+        responses={201: openapi.Response('Успешная регистрация'), 400: "Ошибки валидации"}
+    )
     def post(self, request):
         serializer = RegisterUserSerializer(data=request.data)
         if serializer.is_valid():
@@ -94,6 +100,13 @@ from .models import Store, ManagerInviteToken
 class GenerateInviteLinkView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_description="Генерация инвайт-ссылки для менеджера",
+        manual_parameters=[
+            openapi.Parameter('store_id', openapi.IN_PATH, description="ID магазина", type=openapi.TYPE_INTEGER)
+        ],
+        responses={200: openapi.Response(description="Инвайт-ссылка создана")}
+    )
     def post(self, request, store_id):
         try:
             store = Store.objects.get(id=store_id)
@@ -117,6 +130,10 @@ class RegisterViaTokenView(APIView):
             return [AllowAny()]
         return [IsAuthenticated()]
 
+    @swagger_auto_schema(
+        operation_description="Проверка инвайт-токена для регистрации менеджера",
+        responses={200: openapi.Response(description="Токен действителен"), 400: "Недействительный токен"}
+    )
     def get(self, request, token):
         try:
             invite_token = ManagerInviteToken.objects.select_related('store').get(token=token, is_used=False)
@@ -133,6 +150,11 @@ class RegisterViaTokenView(APIView):
             "token": str(invite_token.token)
         }, status=status.HTTP_200_OK if not is_expired else status.HTTP_400_BAD_REQUEST)
 
+    @swagger_auto_schema(
+        operation_description="Регистрация менеджера по инвайт-токену",
+        request_body=InviteByTokenSerializer,
+        responses={201: openapi.Response(description="Менеджер зарегистрирован"), 400: "Ошибка"}
+    )
     def post(self, request, token):
         try:
             invite_token = ManagerInviteToken.objects.get(token=token)
@@ -168,6 +190,10 @@ class RegisterViaTokenView(APIView):
 class ConfirmInviteView(APIView):
     permission_classes = [AllowAny]
 
+    @swagger_auto_schema(
+        operation_description="Подтвеждение регистрации по ссылке",
+        responses={200: openapi.Response(description="Список пользователей")}
+    )
     def get(self, request, token):
         try:
             invite_token = ManagerInviteToken.objects.get(token=token)
@@ -228,6 +254,18 @@ class ProductViewSet(viewsets.ModelViewSet):
 
     def get_store(self):
         user = self.request.user
+
+        if not user.is_authenticated:
+            raise PermissionDenied("Необходима авторизация")
+
+        if hasattr(user, 'role'):
+            if user.role == 'owner':
+                return Store.objects.filter(owner=user).first()
+            elif user.role == 'manager':
+                return user.store
+
+        raise PermissionDenied("Вы не привязаны к магазину.")
+
         if user.role == 'owner':
             store = Store.objects.filter(owner=user).first()
         elif user.role == 'manager':
@@ -262,6 +300,11 @@ class QuestionAnswerViewSet(viewsets.ModelViewSet):
             return QuestionAnswer.objects.filter(responder=user)
         return QuestionAnswer.objects.none()
 
+    @swagger_auto_schema(
+        method='get',
+        operation_description="Ответы менеджера по вопросам конкретного пользователя",
+        responses={200: openapi.Response(description="Список ответов"), 404: "Пользователь не найден"}
+    )
     @action(detail=False, methods=['get'], url_path='by-user/(?P<user_id>[^/.]+)')
     def answers_by_user(self, request, user_id=None):
         try:
@@ -304,6 +347,20 @@ class ProductQuestionMessageViewSet(viewsets.ModelViewSet):
 class ExternalQuestionCreateView(APIView):
     permission_classes = [IsAuthenticatedOrAPISecret]  # публично, но по ключу
 
+    @swagger_auto_schema(
+        operation_description="Публичный API для создания вопроса о товаре, используется API-ключ (например, X-API-KEY)",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['external_id', 'product', 'text'],
+            properties={
+                'external_id': openapi.Schema(type=openapi.TYPE_STRING),
+                'product': openapi.Schema(type=openapi.TYPE_INTEGER),
+                'text': openapi.Schema(type=openapi.TYPE_STRING),
+                'marketplace': openapi.Schema(type=openapi.TYPE_STRING, enum=['ozon', 'wildberries', 'yandex_market']),
+            },
+        ),
+        responses={201: openapi.Response(description="Вопрос создан"), 400: "Ошибка запроса"},
+    )
     def post(self, request):
 
         external_id = request.data.get('external_id')
@@ -340,6 +397,16 @@ class ExternalQuestionCreateView(APIView):
 
 
 class UserConversationView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_description="Получить переписку пользователя по external_id",
+        manual_parameters=[
+            openapi.Parameter('external_id', openapi.IN_QUERY, description="ID внешнего пользователя",
+                              type=openapi.TYPE_STRING)
+        ],
+        responses={200: openapi.Response(description="Список вопросов и сообщений")}
+    )
     def get(self, request):
         external_id = request.query_params.get("external_id")
         if not external_id:
@@ -357,6 +424,10 @@ class UserConversationView(APIView):
 class ShopUserListView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_description="Список пользователей, задававших вопросы по товарам магазина",
+        responses={200: openapi.Response(description="Список пользователей")}
+    )
     def get(self, request):
         store = get_store_for_user(request.user)
         if not store:
