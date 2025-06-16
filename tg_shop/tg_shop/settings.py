@@ -73,7 +73,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'tg_shop.urls'
-
+CORS_ALLOW_ALL_ORIGINS = True  # или более безопасная настройка CORS_ALLOWED_ORIGINS
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
