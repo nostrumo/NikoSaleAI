@@ -1,0 +1,43 @@
+{
+  "project_type": "django",
+  "language": "python",
+  "description": "AI marketplace manager with question handling, product management, and marketplace integrations",
+  "entry_point": "backend/manage.py",
+  "env": ".env",
+  "database": {
+    "type": "postgresql",
+    "host": "db",
+    "port": 5432,
+    "user": "postgres",
+    "password": "your_password",
+    "name": "your_db"
+  },
+  "services": {
+    "web": {
+      "dockerfile": "Dockerfile",
+      "build_context": ".",
+      "port": 8000
+    },
+  },
+  "api_routes": [
+    "/api/products/",
+    "/api/questions/",
+    "/api/messages/",
+    "/api/external/questions/"
+  ],
+  "authentication": {
+    "type": "jwt",
+    "header": "Authorization",
+    "prefix": "Bearer"
+  },
+  "roles": ["owner", "manager", "user", "ai"],
+  "models": [
+    "Product",
+    "ProductQuestion",
+    "ProductQuestionMessage",
+    "Store",
+    "CustomUser",
+    "Marketplace",
+    "MarketplaceIntegrationToken"
+  ]
+}
