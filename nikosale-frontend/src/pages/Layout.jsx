@@ -1,128 +1,102 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
+  Menu,
+  MessageSquare,
+  Box,
   BarChart2,
-  Users,
-  Activity,
-  Package,
-  LifeBuoy,
-  BookOpen,
-  Wallet,
+  FileText,
+  HelpCircle,
+  Settings,
   ChevronLeft,
   ChevronRight,
-  Plus,
   Bell,
-  MessageSquare,
   X,
 } from 'lucide-react';
 
-const menuItems = [
-  { label: 'Статистика', icon: BarChart2 },
-  { label: 'Менеджеры', icon: Users },
-  { label: 'Аналитика', icon: Activity },
-  { label: 'Товары', icon: Package },
-  { divider: true },
-  { label: 'Поддержка', icon: LifeBuoy },
-  { label: 'Инструкции', icon: BookOpen },
-];
+export default function SidebarLayout({ children }) {
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-const BalanceCard = () => (
-  <div className="bg-muted rounded-xl p-4 flex flex-col gap-2 text-sm">
-    <div className="flex items-center justify-between">
-      <span className="font-medium">Баланс</span>
-      <Wallet className="w-4 h-4 text-muted-foreground" />
-    </div>
-    <div className="text-lg font-semibold">1 250 ₽</div>
-    <button
-      className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white py-1.5 px-3 rounded-md text-xs flex items-center justify-center gap-2"
-    >
-      <Plus className="w-4 h-4" /> Пополнить
-    </button>
-  </div>
-);
-
-const CollapsibleSidebar = ({ collapsed, setCollapsed }) => (
-  <aside
-    className={`flex flex-col justify-between bg-background border-r transition-all duration-300 px-2 py-4 h-screen
-      ${collapsed ? 'w-16 relative z-40' : 'fixed inset-0 w-screen h-screen z-40'}
-    `}
-  >
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between px-2">
-        <div className="flex items-center">
-          <img src="/logo.svg" alt="Логотип" className="h-6" />
-          {!collapsed && <span className="text-lg font-semibold ml-2">NikoSale</span>}
-        </div>
-        {/* Кнопка закрытия для развёрнутого состояния на мобильных */}
-        {!collapsed && (
-          <button
-            onClick={() => setCollapsed(true)}
-            className="text-muted-foreground hover:text-foreground p-1 rounded-full"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        )}
-      </div>
-
-      <div>
-        {menuItems.map((item, idx) =>
-          item.divider ? (
-            <hr key={idx} className="my-2 border-border" />
-          ) : (
-            <button
-              key={item.label}
-              className="flex items-center gap-3 w-full px-3 py-2 rounded-xl text-sm hover:bg-muted text-muted-foreground hover:text-foreground transition"
-            >
-              <item.icon className="w-4 h-4" />
-              {!collapsed && <span className="truncate">{item.label}</span>}
-            </button>
-          )
-        )}
-      </div>
-    </div>
-    {!collapsed && (
-      <div className="px-2 mt-4">
-        <BalanceCard />
-      </div>
-    )}
-  </aside>
-);
-
-const Header = ({ collapsed, setCollapsed }) => (
-  <header
-    className={`fixed top-0 left-0 right-0 h-14 z-30 bg-background border-b flex items-center justify-between px-4 transition-all duration-300`}
-  >
-    <div className="text-lg font-semibold flex items-center">
-      <button
-        onClick={() => setCollapsed(!collapsed)}
-        className="text-muted-foreground hover:text-foreground bg-background border rounded-full p-1 shadow mr-2"
-      >
-        {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-      </button>
-      Панель управления
-    </div>
-    <div className="flex items-center gap-4 text-muted-foreground">
-      <button className="hover:text-foreground">
-        <MessageSquare className="w-5 h-5" />
-      </button>
-      <button className="hover:text-foreground">
-        <Bell className="w-5 h-5" />
-      </button>
-    </div>
-  </header>
-);
-
-const Layout = ({ title = 'Панель управления', children }) => {
-  const [collapsed, setCollapsed] = useState(true);
+  const menuItems = [
+    { icon: <MessageSquare size={20} />, label: 'Чаты' },
+    { icon: <Box size={20} />, label: 'Товары' },
+    { icon: <BarChart2 size={20} />, label: 'Аналитика' },
+    'divider',
+    { icon: <FileText size={20} />, label: 'Инструкции' },
+    { icon: <HelpCircle size={20} />, label: 'Поддержка' },
+    'divider',
+    { icon: <Settings size={20} />, label: 'Настройка' },
+    'divider',
+    { icon: collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />, label: 'Скрыть', toggle: true }
+  ];
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background text-foreground">
-      <CollapsibleSidebar collapsed={collapsed} setCollapsed={setCollapsed} />
-      <div className="flex flex-col flex-1">
-        <Header collapsed={collapsed} setCollapsed={setCollapsed} title={title} />
-        <main className="pt-14 overflow-y-auto p-4">{children}</main>
+    <div className="flex flex-col md:flex-row h-screen relative overflow-hidden">
+      {/* Desktop Sidebar */}
+      <aside className={`hidden md:flex transition-all duration-300 shadow-md border-r border-gray-200  ${collapsed ? 'w-16' : 'w-64'} p-4 flex-col gap-4`}>
+        <div className="text-lg font-bold mb-4">{!collapsed && 'Логотип'}</div>
+        <nav className="flex flex-col gap-2 flex-grow">
+          {menuItems.map((item, idx) => {
+            if (item === 'divider') return <hr key={idx} className="border-gray-100 my-2" />;
+            return (
+              <button
+                key={item.label}
+                onClick={item.toggle ? () => setCollapsed(!collapsed) : undefined}
+                className="flex items-center gap-3 px-2 py-2 rounded hover:bg-gray-100"
+              >
+                <span>{item.icon}</span>
+                {!collapsed && <span>{item.label}</span>}
+              </button>
+            );
+          })}
+        </nav>
+      </aside>
+
+      {/* Mobile Header */}
+      <header className="md:hidden flex items-center justify-between shadow bg-white border-b border-gray-200 px-4 py-3">
+        <div className="flex items-center gap-2">
+          <button onClick={() => setMobileMenuOpen(true)}>
+            <Menu size={24} />
+          </button>
+          <span className="absolute left-1/2 transform -translate-x-1/2 text-xl font-bold text-center">Заголовок</span>
+        </div>
+        <div className="flex items-center gap-4">
+          <Bell size={20} />
+          <MessageSquare size={20} />
+        </div>
+      </header>
+
+      {/* Mobile Menu Fullscreen Overlay */}
+      <div
+        className={`fixed inset-0 z-50 bg-white transform transition-transform duration-300 md:hidden ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}
+      >
+        <div className="flex justify-between items-center p-4">
+          <span className="text-lg font-bold">Меню</span>
+          <button onClick={() => setMobileMenuOpen(false)}>
+            <X size={24} />
+          </button>
+        </div>
+        <nav className="flex flex-col gap-2 p-4">
+          {menuItems.map((item, idx) => {
+            if (item === 'divider') return <hr key={idx} className="border-gray-700 my-2" />;
+            return (
+              <button
+                key={item.label}
+                onClick={() => item.toggle ? setMobileMenuOpen(false) : null}
+                className="flex items-center gap-3 px-2 py-2 rounded hover:bg-gray-100"
+              >
+                <span>{item.icon}</span>
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
       </div>
+
+      <main className="transition-all duration-300 flex-1 overflow-y-auto p-6">
+        <div className="hidden md:block text-3xl font-bold text-gray-800 mb-6 px-6"><h1>Заголовок страницы</h1></div>
+        {children}
+      </main>
     </div>
   );
-};
-
-export default Layout;
+}

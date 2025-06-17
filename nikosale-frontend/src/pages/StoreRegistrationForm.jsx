@@ -62,13 +62,13 @@ const StoreForm = () => {
   };
     if (isLoading) {
         return (
-            <div className="w-full max-w-screen-md mx-auto px-4 py-10 text-center text-muted-foreground">
+            <div className="w-full mx-auto px-4 py-10 text-center text-muted-foreground">
                 <p className="text-sm animate-pulse">Загрузка данных магазина...</p>
             </div>
         );
     }
     return (
-        <div className="w-full max-w-screen-md mx-auto space-y-6 px-4">
+        <div className="w-full mx-auto space-y-6 px-4">
             <div>
                 <h2 className="text-xl font-semibold">Регистрация магазина</h2>
                 <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
