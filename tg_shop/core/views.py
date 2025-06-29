@@ -5,6 +5,8 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 from drf_yasg import openapi
 from .permissions import IsOwnerOrManager, IsAuthenticatedOrAPISecret
 from .serializers import RegisterUserSerializer, MarketplaceTokenSerializer, ProductSerializer, \
@@ -468,4 +470,30 @@ class ShopUserListView(APIView):
 
         sorted_users = sorted(result.values(), key=lambda x: x["first_message"])
         return Response(sorted_users)
+
+
+class NotificationSendView(APIView):
+    """Отправка уведомления всем подключённым клиентам."""
+
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_description="Отправить уведомление всем пользователям",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=["message"],
+            properties={"message": openapi.Schema(type=openapi.TYPE_STRING)},
+        ),
+        responses={200: openapi.Response(description="Уведомление отправлено")},
+    )
+    def post(self, request):
+        message = request.data.get("message")
+        if not message:
+            return Response({"error": "message is required"}, status=400)
+
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            "notifications", {"type": "notify", "message": message}
+        )
+        return Response({"status": "ok"})
 

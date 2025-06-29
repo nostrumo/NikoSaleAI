@@ -7,7 +7,8 @@ from .views import (
     GenerateInviteLinkView,
     RegisterViaTokenView, ConfirmInviteView, MarketplaceTokenViewSet, ProductViewSet, QuestionAnswerViewSet,
     ProductQuestionViewSet, ProductQuestionMessageViewSet, ExternalQuestionCreateView, UserConversationView,
-    ShopUserListView
+    ShopUserListView,
+    NotificationSendView,
 )
 
 from rest_framework import permissions
@@ -33,4 +34,5 @@ urlpatterns = [
     path('', include(router.urls)),
     path('external/questions/', ExternalQuestionCreateView.as_view(), name='external-question'),
     path('invite/<uuid:token>/confirm/', ConfirmInviteView.as_view(), name='invite-confirm'),
+    path('notify/', NotificationSendView.as_view(), name='notify'),
 ]

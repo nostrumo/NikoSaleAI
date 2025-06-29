@@ -1,4 +1,5 @@
 import React, {useState, useEffect, useRef} from 'react';
+import api from '../api/axios';
 import {ChevronLeft} from 'lucide-react';
 import {Send} from 'lucide-react';
 import TextareaAutosize from 'react-textarea-autosize';
@@ -10,10 +11,10 @@ export function useChatSocket(selectedUser, onMessageReceived) {
     useEffect(() => {
         if (!selectedUser) return;
 
-        const ws = new WebSocket(`ws://localhost:8000/ws/${selectedUser.id}`);
+        const ws = new WebSocket(`ws://localhost:8000/ws/chat/${selectedUser.external_id}/`);
         wsRef.current = ws;
 
-        ws.onopen = () => console.log('🔌 WebSocket открыт для', selectedUser.name);
+        ws.onopen = () => console.log('🔌 WebSocket открыт для', selectedUser.external_id);
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
             onMessageReceived(data);
@@ -221,29 +222,7 @@ const getMessageStyle = (sender) => {
 };
 
 
-const users = [
-    {id: 1, name: 'Иван Иванов'},
-    {id: 2, name: 'Мария Смирнова'},
-    {id: 3, name: 'Мария Смирнова'},
-    {id: 4, name: 'Мария Смирнова'},
-    {id: 5, name: 'Мария Смирнова'},
-    {id: 6, name: 'Мария Смирнова'},
-    {id: 7, name: 'Мария Смирнова'},
-    {id: 8, name: 'Мария Смирнова'},
-    {id: 9, name: 'Мария Смирнова'},
-    {id: 10, name: 'Мария Смирнова'},
-    {id: 11, name: 'Мария Смирнова'},
-    {id: 12, name: 'Мария Смирнова'},
-    {id: 13, name: 'Мария Смирнова'},
-    {id: 14, name: 'Мария Смирнова'},
-    {id: 15, name: 'Мария Смирнова'},
-    {id: 16, name: 'Мария Смирнова'},
-    {id: 17, name: 'Мария Смирнова'},
-    {id: 18, name: 'Мария Смирнова'},
-    {id: 19, name: 'Мария Смирнова'},
-    {id: 20, name: 'Мария Смирнова'},
-    {id: 21, name: 'Алексей Кузнецов'},
-];
+const usersPlaceholder = [];
 
 const getColorFromChar = (char) => {
     const colors = [
@@ -263,11 +242,12 @@ export default function ChatPage() {
     const [message, setMessage] = useState('');
     const [loadingMessages, setLoadingMessages] = useState(false);
     const [messages, setMessages] = useState([]);
+    const [users, setUsers] = useState(usersPlaceholder);
     const wsRef = useRef(null);
     const {sendMessage} = useChatSocket(selectedUser, (data) => {
         console.log('📨 Получено сообщение:', data);
 
-        if (selectedUser && data.from === selectedUser.id) {
+        if (selectedUser && data.from === selectedUser.external_id) {
             setMessages((prev) => [
                 ...prev,
                 {
@@ -287,6 +267,12 @@ export default function ChatPage() {
     });
 
     useEffect(() => {
+        api.get('shop_users/')
+            .then((res) => setUsers(res.data))
+            .catch((e) => console.error('Ошибка загрузки пользователей', e));
+    }, []);
+
+    useEffect(() => {
         if (isNearBottom()) {
             scrollToBottom('smooth');
         } else {
@@ -300,7 +286,7 @@ export default function ChatPage() {
         // Если WebSocket подключён — отправляем
         if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN && selectedUser) {
             wsRef.current.send(JSON.stringify({
-                to: selectedUser.id,   // ID получателя
+                to: selectedUser.external_id,   // ID получателя
                 message: message.trim() // Текст сообщения
             }));
         } else {
@@ -328,7 +314,7 @@ export default function ChatPage() {
         if (selectedUser) {
             setUnreadByUser(prev => {
                 const copy = {...prev};
-                delete copy[selectedUser.id];
+                delete copy[selectedUser.external_id];
                 return copy;
             });
         }
@@ -438,11 +424,11 @@ export default function ChatPage() {
                         <h2 className="text-xl font-semibold mb-4">Выберите пользователя</h2>
                         <ul className="space-y-2">
                             {users.map((user) => {
-                                const initial = user.name[0];
+                                const initial = user.external_id[0];
                                 const color = getColorFromChar(initial);
                                 return (
                                     <li
-                                        key={user.id}
+                                        key={user.external_id}
                                         onClick={() => setSelectedUser(user)}
                                         className="flex items-center gap-3 cursor-pointer p-2 rounded hover:bg-gray-100 transition"
                                     >
@@ -452,11 +438,11 @@ export default function ChatPage() {
                                             {initial}
                                         </div>
                                         <span className="text-sm font-medium flex items-center gap-2">
-    {user.name}
-                                            {unreadByUser[user.id] && (
+    {user.external_id}
+                                            {unreadByUser[user.external_id] && (
                                                 <span
                                                     className="ml-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
-            {unreadByUser[user.id]}
+            {unreadByUser[user.external_id]}
         </span>
                                             )}
 </span>
@@ -479,7 +465,7 @@ export default function ChatPage() {
                             >
                                 <ChevronLeft className="w-6 h-6"/>
                             </button>
-                            <h2 className="text-lg font-semibold">{selectedUser.name}</h2>
+                            <h2 className="text-lg font-semibold">{selectedUser.external_id}</h2>
                         </div>
 
                         {/* Контейнер сообщений */}
@@ -576,14 +562,14 @@ export default function ChatPage() {
                 <h2 className="text-xl font-semibold mb-4">Пользователи</h2>
                 <ul className="space-y-2">
                     {users.map((user) => {
-                        const initial = user.name[0];
+                        const initial = user.external_id[0];
                         const color = getColorFromChar(initial);
                         return (
                             <li
-                                key={user.id}
+                                key={user.external_id}
                                 onClick={() => setSelectedUser(user)}
                                 className={`flex items-center gap-3 cursor-pointer p-2 rounded hover:bg-gray-100 transition ${
-                                    selectedUser && user.id === selectedUser.id ? 'bg-gray-100' : ''
+                                    selectedUser && user.external_id === selectedUser.external_id ? 'bg-gray-100' : ''
                                 }`}
                             >
                                 <div
@@ -591,7 +577,7 @@ export default function ChatPage() {
                                 >
                                     {initial}
                                 </div>
-                                <span className="text-sm font-medium">{user.name}</span>
+                                <span className="text-sm font-medium">{user.external_id}</span>
                             </li>
                         );
                     })}
@@ -602,7 +588,7 @@ export default function ChatPage() {
             {selectedUser ? (
                 <main className="relative flex flex-col flex-1 h-full overflow-hidden">
                     <div className="border-b px-6 py-4 text-lg font-semibold bg-white">
-                        {selectedUser.name}
+                        {selectedUser.external_id}
                     </div>
 
                     <div className="flex flex-col flex-1 overflow-hidden">
