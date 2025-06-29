@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'core',
+    'channels',
 ]
 INSTALLED_APPS += ['rest_framework',
                    'django_cryptography',
@@ -90,6 +91,13 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'tg_shop.wsgi.application'
+ASGI_APPLICATION = 'tg_shop.asgi.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    }
+}
 
 
 # Database
