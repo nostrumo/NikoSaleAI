@@ -1,24 +1,6 @@
-import {MessageCircle, Share2, Star, UserCheck} from 'lucide-react';
 
-export default function NotificationsList() {
-    const notifications = [
-        {
-            icon: <MessageCircle className="w-5 h-5 text-blue-500"/>,
-            text: 'Новое сообщение от клиента',
-        },
-        {
-            icon: <Share2 className="w-5 h-5 text-green-500"/>,
-            text: 'Сообщение передано менеджеру',
-        },
-        {
-            icon: <Star className="w-5 h-5 text-yellow-500"/>,
-            text: 'Ура! Новый отзыв от покупателя',
-        },
-        {
-            icon: <UserCheck className="w-5 h-5 text-purple-500"/>,
-            text: 'Менеджер принял приглашение',
-        },
-    ];
+export default function NotificationsList({items}) {
+    const notifications = items || [];
 
     return (
         <div className="w-72 max-h-96 overflow-y-auto">

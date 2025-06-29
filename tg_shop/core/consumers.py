@@ -41,3 +41,20 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 "message": event["message"],
             })
         )
+
+
+class NotificationConsumer(AsyncWebsocketConsumer):
+    """WebSocket-консюмер для уведомлений."""
+
+    async def connect(self) -> None:
+        """Подключает клиента к общей группе уведомлений."""
+        await self.channel_layer.group_add("notifications", self.channel_name)
+        await self.accept()
+
+    async def disconnect(self, close_code: int) -> None:
+        """Отключает клиента от группы уведомлений."""
+        await self.channel_layer.group_discard("notifications", self.channel_name)
+
+    async def notify(self, event: dict) -> None:
+        """Отправляет событие уведомления пользователю."""
+        await self.send(text_data=json.dumps({"message": event["message"]}))

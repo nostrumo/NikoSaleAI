@@ -43,7 +43,8 @@ export default function SidebarLayout({children}) {
     };
     const location = useLocation();
     const [unreadChats, setUnreadChats] = useState(true);
-    const [unreadNotifications, setUnreadNotifications] = useState(true);
+    const [unreadNotifications, setUnreadNotifications] = useState(false);
+    const [notifications, setNotifications] = useState([]);
     const title = pageTitles[location.pathname] || 'Заголовок';
     const menuItems = [
         {icon: <MessageSquare size={20}/>, label: 'Чаты', path: '/chats'},
@@ -81,6 +82,16 @@ export default function SidebarLayout({children}) {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [isSidebarOpen]);
+
+    useEffect(() => {
+        const ws = new WebSocket('ws://localhost:8000/ws/notifications/');
+        ws.onmessage = (e) => {
+            const data = JSON.parse(e.data);
+            setNotifications((prev) => [...prev, {text: data.message}]);
+            setUnreadNotifications(true);
+        };
+        return () => ws.close();
+    }, []);
 
 
     return (
@@ -147,9 +158,9 @@ export default function SidebarLayout({children}) {
                     </div>
                     <div className="relative">
                         <DropdownLayout
-                            trigger={<Bell size={20} className="text-gray-600"/>}
+                            trigger={<div onClick={() => setUnreadNotifications(false)}><Bell size={20} className="text-gray-600"/></div>}
                         >
-<NotificationsList />
+<NotificationsList items={notifications} />
                         </DropdownLayout>
 
                         {unreadNotifications && (
@@ -222,9 +233,9 @@ export default function SidebarLayout({children}) {
                             </div>
                             <div className="relative">
                                 <DropdownLayout
-                                    trigger={<Bell size={20} className="text-gray-600"/>}
+                                    trigger={<div onClick={() => setUnreadNotifications(false)}><Bell size={20} className="text-gray-600"/></div>}
                                 >
-<NotificationsList />
+<NotificationsList items={notifications} />
                                 </DropdownLayout>
                                 {unreadNotifications && (
                                     <span
