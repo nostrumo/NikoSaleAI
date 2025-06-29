@@ -1,18 +1,21 @@
 import React, {useState} from 'react';
 import {Bot, Users, Settings, Link2} from 'lucide-react';
 import StoreRegistrationForm from './StoreRegistrationForm';
+import PromtSetup from './PromtSetup';
+import Integrations from './Integrations';
+import StepForm from './step_form/StepManager';
 import Manager from './Manager';
-import Layout from './Layout';
+import IntegrationsPage from "../components/IntegrationsPage";
 
 const sections = [
-    {label: 'Настройка магазина', icon: Bot},
+    {label: 'Магазин', icon: Bot},
     {label: 'Менеджеры', icon: Users},
     {label: 'Настройка ИИ', icon: Settings},
     {label: 'Интеграции', icon: Link2},
 ];
 
 const Sidebar = ({active, setActive}) => (
-    <aside className="hidden lg:flex w-64 flex-col gap-2 bg-background border-r px-4 py-6">
+    <aside className="hidden md:flex w-64 flex-col gap-2 bg-background border-r px-4 py-6">
         <div className="text-lg font-semibold px-2">Магазин</div>
         {sections.map(({label, icon: Icon}) => (
             <button
@@ -28,65 +31,62 @@ const Sidebar = ({active, setActive}) => (
     </aside>
 );
 
-const MobileTabs = ({ active, setActive }) => (
-  <div
-    className="w-full flex flex-nowrap bg-background border-b overflow-x-auto gap-1 px-2 py-2 sm:gap-2 sm:px-4 sm:py-3 scrollbar-hide"
-  >
-    {sections.map(({ label, icon: Icon }) => (
-      <button
-        key={label}
-        onClick={() => setActive(label)}
-        className={`flex items-center gap-1 sm:gap-2 px-3 py-2 text-xs sm:text-sm rounded-lg whitespace-nowrap transition ${
-          active === label ? 'bg-blue-600 text-white' : 'bg-muted text-muted-foreground'
-        }`}
-      >
-        <Icon className="w-4 h-4 shrink-0" />
-        <span className="truncate">{label}</span>
-      </button>
-    ))}
-  </div>
-);
+const BottomTabs = ({active, setActive}) => (
+    <div
+        className="fixed bottom-0 left-0 w-full bg-background border-t z-40 flex justify-around items-center h-16 md:hidden">
+        {sections.map(({label, icon: Icon}) => {
+            const isActive = active === label;
+            return (
+                <button
+                    key={label}
+                    onClick={() => setActive(label)}
+                    className="flex flex-col items-center text-xs focus:outline-none transition"
+                >
+                    <Icon className={`w-6 h-6 ${isActive ? 'text-blue-600' : 'text-muted-foreground'}`}/>
+                    <span className={`mt-1 ${isActive ? 'text-blue-600 font-medium' : 'text-muted-foreground'}`}>
+            {label}
+          </span>
+                </button>
+            );
+        })}
+    </div>)
 
 
 const SectionContent = ({active, setActive}) => {
     switch (active) {
-        case 'Настройка магазина':
+        case 'Магазин':
             return <StoreRegistrationForm/>;
         case 'Менеджеры':
             return <Manager/>;
         case 'Настройка ИИ':
-            return <div className="text-sm text-muted-foreground">Конфигурация поведения ИИ</div>;
+            return <PromtSetup/>;
         case 'Интеграции':
-            return <div className="text-sm text-muted-foreground">Настройки интеграции с маркетплейсами</div>;
+            return <IntegrationsPage/>;
         default:
             return null;
     }
 };
 
 const SettingsLayout = () => {
-  const [active, setActive] = useState(sections[0].label);
+    const [active, setActive] = useState(sections[0].label);
 
-  return (
-    <Layout>
-      <div className="flex h-screen w-full bg-background text-foreground overflow-hidden">
-        {/* Desktop Sidebar */}
-        <Sidebar active={active} setActive={setActive} />
+    return (
+        <div className="flex w-full bg-background text-foreground  mb-16 sm:mb-0">
+            {/* Desktop Sidebar */}
+            <Sidebar active={active} setActive={setActive}/>
 
-        <div className="flex flex-col flex-1">
+            <div className="flex flex-col flex-1">
 
-          {/* Mobile Tabs */}
-          <div className="lg:hidden bg-background overflow-x-scroll">
-            <MobileTabs active={active} setActive={setActive} />
-          </div>
+                {/* Mobile Tabs */}
+                <BottomTabs active={active} setActive={setActive}/>
 
-          {/* Main Content */}
-          <main className="flex-1 overflow-y-auto py-4 sm:py-6 pt-28 lg:pt-20 lg:px-8">
-            <SectionContent active={active} setActive={setActive} />
-          </main>
+                {/* Main Content */}
+                <main className="flex-1">
+                    <SectionContent active={active} setActive={setActive}/>
+                </main>
+            </div>
         </div>
-      </div>
-    </Layout>
-  );
+    );
 };
 
 
