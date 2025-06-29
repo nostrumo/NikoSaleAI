@@ -1,4 +1,4 @@
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     """Конфигурация приложения, загруженная из окружения."""
@@ -11,5 +11,6 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
+        extra = "allow"  # или "ignore"
 
 settings = Settings()
